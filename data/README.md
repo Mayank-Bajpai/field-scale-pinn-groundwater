@@ -33,8 +33,8 @@ The column names can be adapted in `fit_transform_with_midrange_head` (automatic
 ## Preprocessing (performed by the code)
 
 - X, Y and time are min–max scaled to [0, 1] with a scaler shared across all datasets.
-- Heads and river stage are scaled as $(h - h_\text{mid}) / L_h$ with $h_\text{mid} = (h_\max + h_\min)/2$ and
-  $L_h = 0.6\,(h_\max - h_\min)$.
+- Heads and river stage are scaled as `(h - h_mid) / L_h` with `h_mid = (h_max + h_min) / 2` and
+  `L_h = 0.6 (h_max - h_min)`.
 - Abstraction rates are min–max scaled; recharge, ET and abstraction are made continuous in space and time by radial-basis
   interpolation.
 
