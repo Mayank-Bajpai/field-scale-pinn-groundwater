@@ -1,0 +1,27 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "name": "Field-scale PINNs for groundwater: Bayesian optimisation and FiLM modulation",
+  "description": "Physics-informed neural networks for joint groundwater-head prediction and inverse estimation of anisotropic hydraulic conductivity and storage in a data-scarce alluvial aquifer; compares a baseline PINN, an Optuna-optimised PINN and a FiLM-conditioned PINN.",
+  "codeRepository": "https://github.com/Mayank-Bajpai/field-scale-pinn-groundwater",
+  "issueTracker": "https://github.com/Mayank-Bajpai/field-scale-pinn-groundwater/issues",
+  "license": "https://spdx.org/licenses/MIT",
+  "version": "1.0.0",
+  "dateCreated": "2026-09-21",
+  "datePublished": "2026-09-21",
+  "programmingLanguage": {"@type": "ComputerLanguage", "name": "Python", "version": ">=3.9"},
+  "runtimePlatform": "Python 3",
+  "operatingSystem": ["Linux", "Windows", "macOS"],
+  "softwareRequirements": ["torch>=2.0", "deepxde>=1.10", "optuna>=3.4", "numpy", "pandas", "scipy", "matplotlib", "rasterio"],
+  "developmentStatus": "active",
+  "keywords": ["physics-informed neural networks", "groundwater", "hydrogeology", "inverse problems", "hydraulic conductivity", "Bayesian optimization", "Optuna", "FiLM", "DeepXDE", "scientific machine learning"],
+  "author": [
+    {"@type": "Person", "givenName": "Mayank", "familyName": "Bajpai", "affiliation": {"@type": "Organization", "name": "Indian Institute of Technology (BHU), Varanasi"}},
+    {"@type": "Person", "givenName": "Ranveer", "familyName": "Kumar", "affiliation": {"@type": "Organization", "name": "BRGM-French Geological Survey; Indian Institute of Technology (BHU), Varanasi"}},
+    {"@type": "Person", "givenName": "Kamal", "familyName": "Singh", "affiliation": {"@type": "Organization", "name": "Univ Lyon, UJM-Saint-Etienne, CNRS, Laboratory Hubert Curien UMR 5516"}},
+    {"@type": "Person", "givenName": "Shishir", "familyName": "Gaur", "affiliation": {"@type": "Organization", "name": "Indian Institute of Technology (BHU), Varanasi"}}
+  ],
+  "funding": [
+    {"@type": "Grant", "name": "Prime Minister's Research Fellowship (PMRF)", "funder": {"@type": "Organization", "name": "Ministry of Education, Government of India"}}
+  ]
+}

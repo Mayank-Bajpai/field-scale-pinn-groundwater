@@ -1,0 +1,51 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below, together with the associated article."
+type: software
+title: "Field-scale PINNs for groundwater: Bayesian optimisation and FiLM modulation"
+abstract: >-
+  Physics-informed neural networks (PINNs) for field-scale groundwater modelling in a
+  data-scarce alluvial aquifer (Varuna River basin, India). The code jointly predicts
+  hydraulic head and estimates anisotropic hydraulic conductivity and storage, and
+  compares a baseline PINN, a PINN with Bayesian (Optuna) hyperparameter optimisation,
+  and a FiLM-conditioned PINN under random and temporal validation splits.
+authors:
+  - family-names: Bajpai
+    given-names: Mayank
+    affiliation: "Department of Civil Engineering, Indian Institute of Technology (BHU), Varanasi, India"
+  - family-names: Kumar
+    given-names: Ranveer
+    affiliation: "BRGM-French Geological Survey, Mont St Aignan, France; Indian Institute of Technology (BHU), Varanasi, India"
+  - family-names: Singh
+    given-names: Kamal
+    affiliation: "Univ Lyon, UJM-Saint-Etienne, CNRS, Laboratory Hubert Curien UMR 5516, Saint-Etienne, France"
+  - family-names: Gaur
+    given-names: Shishir
+    affiliation: "Department of Civil Engineering, Indian Institute of Technology (BHU), Varanasi, India"
+repository-code: "https://github.com/Mayank-Bajpai/field-scale-pinn-groundwater"
+license: MIT
+version: 1.0.0
+date-released: "2026-09-21"
+keywords:
+  - physics-informed neural networks
+  - groundwater
+  - hydrogeology
+  - inverse problems
+  - hydraulic conductivity
+  - Bayesian optimization
+  - Optuna
+  - FiLM
+  - DeepXDE
+  - scientific machine learning
+references:
+  - type: article
+    title: "Scaling PINNs for Field-Scale Hydrogeology: Comparative Analysis of Bayesian Optimization and FiLM Modulation"
+    authors:
+      - family-names: Bajpai
+        given-names: Mayank
+      - family-names: Kumar
+        given-names: Ranveer
+      - family-names: Singh
+        given-names: Kamal
+      - family-names: Gaur
+        given-names: Shishir
+    notes: "Manuscript submitted; citation details will be added on publication."

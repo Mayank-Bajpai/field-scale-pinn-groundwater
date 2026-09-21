@@ -1,0 +1,14 @@
+{
+  "title": "Field-scale PINNs for groundwater: Bayesian optimisation and FiLM modulation",
+  "description": "Code accompanying the manuscript 'Scaling PINNs for Field-Scale Hydrogeology: Comparative Analysis of Bayesian Optimization and FiLM Modulation'. Physics-informed neural networks for joint groundwater-head prediction and inverse estimation of anisotropic hydraulic conductivity and storage; compares a baseline PINN, an Optuna-optimised PINN and a FiLM-conditioned PINN. Field data are not included (restricted); a synthetic data generator with the same schema is provided.",
+  "upload_type": "software",
+  "license": "MIT",
+  "creators": [
+    {"name": "Bajpai, Mayank", "affiliation": "Indian Institute of Technology (BHU), Varanasi, India"},
+    {"name": "Kumar, Ranveer", "affiliation": "BRGM-French Geological Survey, France; Indian Institute of Technology (BHU), Varanasi, India"},
+    {"name": "Singh, Kamal", "affiliation": "Univ Lyon, UJM-Saint-Etienne, CNRS, Laboratory Hubert Curien UMR 5516, France"},
+    {"name": "Gaur, Shishir", "affiliation": "Indian Institute of Technology (BHU), Varanasi, India"}
+  ],
+  "keywords": ["physics-informed neural networks", "groundwater", "hydrogeology", "inverse problems", "hydraulic conductivity", "Bayesian optimization", "Optuna", "FiLM", "DeepXDE"],
+  "access_right": "open"
+}

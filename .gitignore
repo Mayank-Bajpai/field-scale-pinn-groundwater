@@ -1,0 +1,109 @@
+# ---------------------------------------------------------------
+# Restricted input data: never commit field observations
+# ---------------------------------------------------------------
+data/*
+!data/README.md
+*.csv
+*.tif
+*.tiff
+*.aux.xml
+*.xlsx
+*.xls
+
+# GIS layers
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.qmd
+*.gpkg
+*.kml
+*.kmz
+
+# ---------------------------------------------------------------
+# Numerical groundwater models (MODFLOW / PEST / GMS): not distributed
+# ---------------------------------------------------------------
+*MODFLOW*/
+*modflow*/
+*.nam
+*.mfn
+*.dis
+*.disv
+*.disu
+*.bas
+*.bas6
+*.lpf
+*.upw
+*.bcf
+*.nwt
+*.pcg
+*.sms
+*.ims
+*.oc
+*.npf
+*.sto
+*.ic
+*.chd
+*.riv
+*.drn
+*.ghb
+*.wel
+*.rch
+*.evt
+*.hob
+*.hds
+*.cbc
+*.cbb
+*.ccf
+*.ddn
+*.bud
+*.lst
+*.list
+*.tdis
+*.mfsim
+*.gwf
+*.pst
+*.pst.*
+*.jco
+*.jcb
+*.rei
+*.rec
+*.par
+*.rmr
+*.gms
+*.gpr
+
+# ---------------------------------------------------------------
+# Run outputs
+# ---------------------------------------------------------------
+results*/
+optuna_pinn_results*/
+pinn_hybrid_aniso*/
+best_retrain/
+*.db
+*.sqlite
+*.pt
+*.pth
+*.ckpt
+*.npz
+*.npy
+*.pkl
+*.parquet
+*.log
+
+# ---------------------------------------------------------------
+# Python / Jupyter / OS
+# ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+.env
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
