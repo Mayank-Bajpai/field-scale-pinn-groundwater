@@ -42,9 +42,9 @@ All three share one module, [`pinn_unified.py`](pinn_unified.py).
 
 **Governing equation.** Two-dimensional transient groundwater flow,
 
-$$
-S\,\frac{\partial h}{\partial t} \;-\; \frac{\partial}{\partial x}\!\left(K_x \frac{\partial h}{\partial x}\right) \;-\; \frac{\partial}{\partial y}\!\left(K_y \frac{\partial h}{\partial y}\right) \;=\; q ,
-$$
+```math
+S \frac{\partial h}{\partial t} - \frac{\partial}{\partial x}\left(K_x \frac{\partial h}{\partial x}\right) - \frac{\partial}{\partial y}\left(K_y \frac{\partial h}{\partial y}\right) = q
+```
 
 is enforced as a residual loss on collocation points in the non-dimensionalised domain
 $(\hat x, \hat y, \hat t) \in [0,1]^3$, with the chain-rule factors $1/L_t$, $1/L_x^2$ and $1/L_y^2$ applied explicitly
@@ -54,7 +54,7 @@ $(\hat x, \hat y, \hat t) \in [0,1]^3$, with the chain-rule factors $1/L_t$, $1/
 
 - **Head network** (`SingleHeadDecomposedNet`): Fourier-feature embedding of $(x, y, t)$ followed by a tanh MLP.
   With `use_film=True`, $(x, y)$ feed the main network while $t$ feeds an auxiliary network that emits feature-wise scale and
-  shift parameters, $\mathbf{h}^{*}_{l} = (1+\boldsymbol\gamma(t)) \odot \mathbf{h}_{l} + \boldsymbol\beta(t)$, applied after
+  shift parameters, `h*_l = (1 + γ(t)) ⊙ h_l + β(t)`, applied after
   every hidden linear layer (FiLM layers are zero-initialised, so training starts from the unmodulated network).
 - **Parameter fields** (`AnisotropicHybridK`, `HybridFieldScalar`): a learnable anchor grid (bilinear interpolation) blended
   with a small coordinate MLP through a learnable weight; outputs are mapped exponentially to physical bounds
