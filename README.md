@@ -58,7 +58,8 @@ $(\hat x, \hat y, \hat t) \in [0,1]^3$, with the chain-rule factors $1/L_t$, $1/
   every hidden linear layer (FiLM layers are zero-initialised, so training starts from the unmodulated network).
 - **Parameter fields** (`AnisotropicHybridK`, `HybridFieldScalar`): a learnable anchor grid (bilinear interpolation) blended
   with a small coordinate MLP through a learnable weight; outputs are mapped exponentially to physical bounds
-  ($K \in [10^{-2}, 5\times10^{2}]$ m d⁻¹) and the anisotropy ratio is constrained.
+  ($K \in [10^{-2}, 5\times10^{2}]$ m d⁻¹; storage $S \in [0.02, 0.35]$, specific yield) and the anisotropy ratio is
+  constrained.
 
 **Loss.** PDE residual + river-stage Dirichlet condition + head observations + optional initial condition
 (sampled from a kriged head raster), plus gradient, curvature, temporal-clipping and latent-field regularisation terms. Loss
@@ -174,6 +175,7 @@ set is scored only when the best trial is retrained (`retrain=True`).
 | `trial_<n>/iter*_net.pt`, `*_K_aniso.pt`, `*_S_field.pt` | model weights (PyTorch state dicts) |
 | `best_trial_summary.json`, `all_trials_metrics.csv` | study summary |
 | `best_retrain/` | retrained best configuration, test metrics and predictions (`retrain=True`) |
+| `best_retrain/aquifer_properties_K_S.csv` | inferred Kx, Ky (m d⁻¹) and S on a 100 × 100 grid (scaled and physical coordinates) |
 
 The Optuna study itself is stored in the SQLite database given by `storage`, so studies can be resumed and analysed
 (e.g. with `optuna.importance.get_param_importances`).

@@ -1901,7 +1901,7 @@ def run_pinn_iterations(
     use_fourier_head=True,
     fourier_freqs=(1,2,4,8,16,32),
     device_model="cuda",
-    include_forcings=False,
+    include_forcings: bool = True,
     skip_lbfgs=True,
     save_dir="pinn_hybrid_aniso_single_head_simple",
     return_penalty_history=False,  # NEW
@@ -1958,7 +1958,7 @@ def run_pinn_iterations(
         head_net, K_field, S_field, sc_it, cm_it, gwt_te, metr, pen_hist = train_one_iteration(
             stage_s,gwt_s,well_s,stats_df,
             et_fun_phys,rch_fun_phys,ztop_fun,dz_fun,
-            include_forcings=False,
+            include_forcings=True,
             prev_net=prev_net,
             river_info=river_info,
             ic_df=ic_df,
@@ -2082,9 +2082,9 @@ def run_pinn_iterations(
 # --------------------------------------------------------
 # Sampling (unchanged)
 # --------------------------------------------------------
-def sample_K_S_maps(K_field: AnisotropicHybridK, S_field: HybridFieldScalar,
-                    K_range=(1e-2,5e2), S_range=(1e-8,5e-3),
-                    nx=121, ny=101):
+def sample_K_S_maps(K_field, S_field,
+                    K_range=(1e-2,5e2), S_range=(0.02, 0.35),
+                    nx=121, ny=101, device=None):
     K_field.eval(); S_field.eval()
     xs=np.linspace(0,1,nx,dtype=np.float32)
     ys=np.linspace(0,1,ny,dtype=np.float32)
@@ -2149,7 +2149,7 @@ if False: # __name__ == "__main__":
         use_fourier_head=True,
         fourier_freqs=(1,2,4,8,16,32),
         device_model="cuda",
-        include_forcings=False,
+        include_forcings=True,
         skip_lbfgs=True,
         save_dir="pinn_hybrid_aniso_single_head_simple"
     )
@@ -2522,7 +2522,7 @@ except Exception as e:
     print(f"[WARN] Failed to load derivative scales: {e}")
 
 # ============== SEARCH SPACE =====================
-def build_search_space(trial: optuna.Trial) -> Dict[str, Any]:
+def build_search_space(trial: optuna.Trial, use_film: bool = False) -> Dict[str, Any]:
     p = {}
     p["phys_weight"]   = trial.suggest_float("phys_weight", 0.4, 1.2, log=True)
     
@@ -2564,7 +2564,7 @@ def build_search_space(trial: optuna.Trial) -> Dict[str, Any]:
     # Features
     # p["use_film"] = trial.suggest_categorical("use_film", [True, False])
     # p["use_film"] = True # Enforced by user requirement
-    p["use_film"] = False # Disabled for comparison run
+    p["use_film"] = bool(use_film)  # set by optimize_pinn(use_film=...)
 
     use_clip = trial.suggest_categorical("use_temporal_clip", [False, True])
     if use_clip:
@@ -2708,7 +2708,7 @@ def _plot_K_fields(K_field, S_field, scales, save_path, nx=121, ny=101, device=N
             S_u        = S_field(xy)
         Kx = map_unit_to_range_exp(Kx_u, 1e-2, 5e2).float().cpu().numpy().reshape(ny,nx)
         Ky = map_unit_to_range_exp(Ky_u, 1e-2, 5e2).float().cpu().numpy().reshape(ny,nx)
-        S  = map_unit_to_range_exp(S_u , 1e-8, 5e-3).float().cpu().numpy().reshape(ny,nx)
+        S  = map_unit_to_range_exp(S_u , 0.02, 0.35).float().cpu().numpy().reshape(ny,nx)
     panels=6
     fig, axes = plt.subplots(1, panels, figsize=(4*panels,4.2), constrained_layout=True)
     plots=[
@@ -2896,7 +2896,7 @@ def objective_builder(global_cfg, plot_each_trial, times_to_plot,
                       disable_grid_maps, low_mem, force_cpu):
     def objective(trial: optuna.Trial) -> float:
         global GLOBAL_GWT_TRAIN, GLOBAL_GWT_VAL, GLOBAL_GWT_TEST, GLOBAL_TEST_INDICES
-        p = build_search_space(trial)
+        p = build_search_space(trial, use_film=global_cfg.get("use_film", False))
 
         run_kwargs=dict(
             warmup_adam_iters=p["warmup_adam_iters"],
@@ -2954,7 +2954,7 @@ def objective_builder(global_cfg, plot_each_trial, times_to_plot,
             augment_river_dirichlet=True,
             warmup_iters=1,
             num_iters=FIXED_MAIN_NUM_ITERS,
-            include_forcings=False,
+            include_forcings=True,
             device_model=device_model,
             skip_lbfgs=True,
             save_dir=trial_dir
@@ -3138,7 +3138,7 @@ def retrain_best(best_params: Dict[str,Any],
         ztop_extn_csv_path=long_cfg.get("ztop_extn_csv_path","Z_top_extn_depth.csv"),
         river_csv_path=long_cfg.get("river_csv_path","varuna_points_latlong.csv"),
         augment_river_dirichlet=True,
-        include_forcings=False,
+        include_forcings=True,
         device_model=device_model,
         skip_lbfgs=True,
         save_dir=output_dir,
@@ -3177,7 +3177,16 @@ def retrain_best(best_params: Dict[str,Any],
     # Ensure Aquifer Properties are extracted (K and S)
     try:
         K_field, S_field = results["final_K_field"], results["final_S_field"]
-        ks_df = sample_K_S_maps(K_field, S_field, scales, nx=100, ny=100, device=device, use_amp=use_amp)
+        nx_ks, ny_ks = 100, 100
+        Kx_map, Ky_map, S_map = sample_K_S_maps(K_field, S_field, nx=nx_ks, ny=ny_ks)
+        xg, yg = np.meshgrid(np.linspace(0, 1, nx_ks, dtype=np.float32),
+                             np.linspace(0, 1, ny_ks, dtype=np.float32))
+        ks_df = pd.DataFrame({
+            "x_scaled": xg.ravel(), "y_scaled": yg.ravel(),
+            "x": scales["X_min"] + xg.ravel() * scales["Lx"],
+            "y": scales["Y_min"] + yg.ravel() * scales["Ly"],
+            "Kx_m_per_day": Kx_map.ravel(), "Ky_m_per_day": Ky_map.ravel(), "S": S_map.ravel(),
+        })
         ks_df.to_csv(os.path.join(output_dir, "aquifer_properties_K_S.csv"), index=False)
         print("[INFO] Extracted Aquifer properties K and S to csv.")
     except Exception as e:
@@ -3259,7 +3268,8 @@ def optimize_pinn(n_trials: int = 30,
         ztop_extn_csv_path=data_path("Z_top_extn_depth.csv"),
         river_csv_path=data_path("varuna_points_latlong.csv"),
         ic_tif_path=data_path(os.path.join("kriging_results", "kriging_2022-05-25.tif")),
-        device_model=device_model
+        device_model=device_model,
+        use_film=use_film
     )
 
     objective = objective_builder(global_cfg,
@@ -3382,6 +3392,7 @@ def optimize_pinn(n_trials: int = 30,
             gwt_train_frac=1.0,
             cluster_bins=4,
             oversample_factor=bp["oversample_factor"],
+            use_film=use_film,
         )
         long_cfg=dict(
             warmup_iters=1,
@@ -3467,9 +3478,12 @@ def load_and_preprocess_data(data_dir: Optional[str] = None,
     if os.path.exists(data_path("derivative_scaling_factors.csv")):
         try:
             ds_df = pd.read_csv(data_path("derivative_scaling_factors.csv"))
-            # Assume columns: parameter, scale_factor
+            # Handle both naming conventions
             if "parameter" in ds_df.columns and "scale_factor" in ds_df.columns:
                 DERIV_SCALES = dict(zip(ds_df["parameter"], ds_df["scale_factor"]))
+                print(f"[INFO] Loaded {len(DERIV_SCALES)} derivative scales.")
+            elif "derivative" in ds_df.columns and "w_max" in ds_df.columns:
+                DERIV_SCALES = dict(zip(ds_df["derivative"], ds_df["w_max"]))
                 print(f"[INFO] Loaded {len(DERIV_SCALES)} derivative scales.")
             else:
                 print("[WARN] derivative_scaling_factors.csv missing required columns.")

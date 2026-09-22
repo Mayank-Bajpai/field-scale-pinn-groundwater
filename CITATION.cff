@@ -24,7 +24,7 @@ authors:
 repository-code: "https://github.com/Mayank-Bajpai/field-scale-pinn-groundwater"
 license: MIT
 version: 1.0.0
-date-released: "2026-09-21"
+date-released: "2026-09-22"
 keywords:
   - physics-informed neural networks
   - groundwater
