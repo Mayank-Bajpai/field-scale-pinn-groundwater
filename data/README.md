@@ -24,7 +24,7 @@ system (metres)**. Dates are parsed with `pandas.to_datetime`; ISO 8601 (`YYYY-M
 | `ET_RCH_VARUNA_ML.csv` | yes | `sno, X, Y, Date, RCH, ET` | Gridded recharge (`RCH`) and evapotranspiration (`ET`) time series (in the study, from a calibrated SWAT model resampled to a 50 m grid). |
 | `Z_top_extn_depth.csv` | yes | `OBJECTID, ID, I, J, K, X, Y, Ztop, Dz` | Aquifer geometry on a grid: top elevation (`Ztop`) and thickness/extension depth (`Dz`). |
 | `varuna_points_latlong.csv` | recommended | `FID, Longitude, Latitude` | Ordered vertices of the river polyline, used to interpolate stage along the river. **Despite the column names, values must be projected X/Y coordinates** in the same system as the other files. |
-| `derivative_scaling_factors.csv` | optional | `parameter, scale_factor` (read by `load_and_preprocess_data`) | Optional scaling of the gradient-penalty search ranges. If absent, default ranges are used. |
+| `derivative_scaling_factors.csv` | optional | `derivative, w_max` (or `parameter, scale_factor`) | Scales the search ranges of the spatial and temporal gradient penalties (rows `dk_dx`, `dk_dt`). If absent, default ranges are used. |
 | `kriging_results/kriging_2022-05-25.tif` | optional | single-band GeoTIFF | Kriged head surface for the initial date, sampled to impose an initial-condition loss in `optimize_pinn`. If absent, the initial-condition term is skipped. |
 
 The column names can be adapted in `fit_transform_with_midrange_head` (automatic detection of common alternatives such as
