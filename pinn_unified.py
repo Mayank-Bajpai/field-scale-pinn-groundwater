@@ -43,10 +43,6 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 
 # Global constants restored
-FIXED_MAIN_NUM_ITERS = 15000
-FIXED_ADAM_ITERS = 4000
-FIXED_HYBRID_N_ANCHOR = 7
-DEFAULT_OUTPUT_DIR = "optuna_pinn_results_random_split_no_film"
 
 # Directory holding the input files (see data/README.md). Override with the
 # PINN_DATA_DIR environment variable or the data_dir argument of load_and_preprocess_data().
@@ -66,35 +62,9 @@ def _ensure_df(obj, name: str) -> pd.DataFrame:
             raise ValueError(f"Failed to read CSV for '{name}' from {obj}: {e}")
     raise TypeError(f"Expected DataFrame or path for '{name}', got {type(obj)}")
 
-def pick_col(df: pd.DataFrame, candidates: Tuple[str, ...]) -> Optional[str]:
-    for c in candidates:
-        if c in df.columns:
-            return c
-    return None
 
-def drop_unnamed_and_empty(df: pd.DataFrame) -> pd.DataFrame:
-    out = df.copy()
-    out = out.drop(columns=[c for c in out.columns if c.startswith("Unnamed")], errors="ignore")
-    obj_cols = out.select_dtypes(include=["object"]).columns
-    if len(obj_cols):
-        out[obj_cols] = out[obj_cols].replace(r"^\s*$", np.nan, regex=True)
-    out = out.dropna(axis=0, how="any")
-    return out
 
-def ensure_datetime(df: pd.DataFrame, date_col: str = "Date") -> pd.DataFrame:
-    out = df.copy()
-    if date_col not in out.columns:
-        raise ValueError(f"Expected a '{date_col}' column. Available: {list(out.columns)}")
-    out[date_col] = pd.to_datetime(out[date_col], errors="coerce")
-    out = out.dropna(subset=[date_col])
-    return out
 
-def date_to_float_days(dt: pd.Series) -> np.ndarray:
-    s = pd.to_datetime(dt, errors="coerce")
-    ns = s.values.view("int64")  # nanoseconds since epoch
-    arr = ns.astype(float)
-    arr[~s.notna().values] = np.nan
-    return arr / 86400e9  # ns -> days
 
 # ---------------- Invertible 1D scalers ----------------
 
@@ -246,35 +216,6 @@ def transform_frames_with_scalers(
 
     return stage_o, gwt_o, well_o
 
-def build_scaler_stats_dataframe(bundle: ScalerBundle) -> pd.DataFrame:
-    """
-    Collect min, max, range for all variables based on the fitted scalers.
-    Adds:
-      - H_mid, Lh from GWT head scaler (primary head scaling for PINN)
-      - Stage_mid, Stage_Lh from stage head scaler
-    """
-    rows = []
-    rows.append(("x",    bundle.x_mm.vmin,    bundle.x_mm.vmax,    bundle.x_mm.vmax - bundle.x_mm.vmin))
-    rows.append(("y",    bundle.y_mm.vmin,    bundle.y_mm.vmax,    bundle.y_mm.vmax - bundle.y_mm.vmin))
-    rows.append(("Date", bundle.t_mm.vmin,    bundle.t_mm.vmax,    bundle.t_mm.vmax - bundle.t_mm.vmin))
-
-    # Original head min/max/range (for reference)
-    gwt_key = bundle.cols["gwt_val"]
-    stage_key = bundle.cols["stage_val"]
-    well_key = bundle.cols["well_val"]
-
-    rows.append((gwt_key,   bundle.gwt_head.hmin,   bundle.gwt_head.hmax,   bundle.gwt_head.hmax - bundle.gwt_head.hmin))
-    rows.append((stage_key, bundle.stage_head.hmin, bundle.stage_head.hmax, bundle.stage_head.hmax - bundle.stage_head.hmin))
-    rows.append((well_key,  bundle.well_val_mm.vmin, bundle.well_val_mm.vmax, bundle.well_val_mm.vmax - bundle.well_val_mm.vmin))
-
-    # Alias rows for convenience (head mid-range scaling)
-    rows.append(("H_mid", bundle.gwt_head.hmid, np.nan, bundle.gwt_head.Lh))
-    rows.append(("Lh",    bundle.gwt_head.Lh,  np.nan, bundle.gwt_head.Lh))
-    rows.append(("Stage_mid", bundle.stage_head.hmid, np.nan, bundle.stage_head.Lh))
-    rows.append(("Stage_Lh",  bundle.stage_head.Lh,   np.nan, bundle.stage_head.Lh))
-
-    stats_df = pd.DataFrame(rows, columns=["attribute", "min", "max", "range"]).set_index("attribute").sort_index()
-    return stats_df
 
 # ---------------- High-level API ----------------
 
@@ -478,30 +419,6 @@ def default_colmap(
     return {"gwt": gwt_map, "stage": stg_map, "well": wel_map}
 
 
-def default_colmap_scaled(
-    gwt_df: pd.DataFrame,
-    stage_df: pd.DataFrame,
-    well_df: pd.DataFrame,
-) -> Dict[str, Dict[str, str]]:
-    """
-    Column mapping for the new scaled schema (with midrange head scaling).
-    """
-    def _has(df, col): return col in df.columns
-    reqs = [
-        ("gwt", gwt_df, ["x_scaled", "y_scaled", "Date_scaled", "GWT_scaled_val"]),
-        ("stage", stage_df, ["x_scaled", "y_scaled", "Date_scaled", "Stage_scaled_val"]),
-        ("well", well_df, ["x_scaled", "y_scaled", "Date_scaled", "Q_scaled_val"]),
-    ]
-    for name, df, cols in reqs:
-        missing = [c for c in cols if not _has(df, c)]
-        if missing:
-            raise ValueError(f"{name} dataframe missing required columns {missing}. Available: {list(df.columns)}")
-
-    return {
-        "gwt":   {"x": "x_scaled", "y": "y_scaled", "t": "Date_scaled", "h": "GWT_scaled_val"},
-        "stage": {"x": "x_scaled", "y": "y_scaled", "t": "Date_scaled", "h": "Stage_scaled_val"},
-        "well":  {"x": "x_scaled", "y": "y_scaled", "t": "Date_scaled", "Q": "Q_scaled_val"},
-    }
 
 
 def _safe_min_max_range(arr_like) -> Tuple[float, float, float]:
@@ -618,51 +535,6 @@ def build_scaler_stats_dataframe(bundle, gwt_df: Optional[pd.DataFrame] = None) 
     return stats_df
 
 
-def stats_to_scales_dict(stats_df: pd.DataFrame, colmap: Dict[str, Dict[str, str]]) -> Dict[str, float]:
-    """
-    Convert stats_df into a scales dictionary with the keys:
-      {
-        "X_min", "Y_min", "Lx", "Ly", "Lt",
-        "H_mid", "Lh",
-        "Q_min", "Q_range"
-      }
-    """
-    def _get(attr, field="min", default=None):
-        return float(stats_df.loc[attr, field]) if attr in stats_df.index else default
-
-    # Prefer explicit alias rows if present; otherwise fall back to base rows.
-    X_min = _get("X_min", "min", _get("x", "min", 0.0))
-    Y_min = _get("Y_min", "min", _get("y", "min", 0.0))
-    Lx    = _get("Lx", "range", _get("x", "range", 1.0))
-    Ly    = _get("Ly", "range", _get("y", "range", 1.0))
-    Lt    = _get("Lt", "range", _get("Date", "range", 1.0))
-
-    # Groundwater head midrange
-    H_mid = _get("H_mid", "min", None)
-    Lh    = _get("Lh", "min", None)
-    if H_mid is None or Lh is None:
-        # fallback to the gwt value key if aliases are missing
-        gwt_key = colmap["gwt"]["h"]
-        hmin = _get(gwt_key, "min", 0.0)
-        hmax = _get(gwt_key, "max", 1.0)
-        H_mid = 0.5 * (hmin + hmax)
-        Lh    = 0.5 * 1.2 * (hmax - hmin)
-
-    # Wells
-    Q_min   = _get("Q_min", "min", None)
-    Q_range = _get("Q_range", "range", None)
-    if Q_min is None or Q_range is None:
-        q_key = colmap["well"]["Q"]
-        qmin = _get(q_key, "min", 0.0)
-        qmax = _get(q_key, "max", 1.0)
-        Q_min   = qmin
-        Q_range = qmax - qmin
-
-    return dict(
-        X_min=X_min, Y_min=Y_min, Lx=Lx, Ly=Ly, Lt=Lt,
-        H_mid=H_mid, Lh=Lh,
-        Q_min=Q_min, Q_range=Q_range,
-    )
 
 
 # Example (expects `bundle`, `gwt_s`, `stage_s`, `well_s` in scope):
@@ -2508,18 +2380,6 @@ def _persist_penalties_from_results(results: Dict[str, Any], trial_dir: str, tri
         loss_plot=loss_plot if os.path.isfile(loss_plot) else None,
     )
 
-# ============== DERIVATIVE SCALING =================
-DERIV_SCALES = {}
-try:
-    if os.path.exists(data_path("derivative_scaling_factors.csv")):
-        df_scales = pd.read_csv(data_path("derivative_scaling_factors.csv"))
-        for _, row in df_scales.iterrows():
-            DERIV_SCALES[row['derivative']] = row['w_max']
-        print(f"[INFO] Loaded derivative scales: {DERIV_SCALES}")
-    else:
-        print("[WARN] derivative_scaling_factors.csv not found. Using defaults.")
-except Exception as e:
-    print(f"[WARN] Failed to load derivative scales: {e}")
 
 # ============== SEARCH SPACE =====================
 def build_search_space(trial: optuna.Trial, use_film: bool = False) -> Dict[str, Any]:
